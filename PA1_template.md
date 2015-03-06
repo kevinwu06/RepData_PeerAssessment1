@@ -1,9 +1,4 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output:
-  html_document:
-    keep_md: true
----
+# Reproducible Research: Peer Assessment 1
 
 
 ## Loading and preprocessing the data
@@ -11,7 +6,8 @@ output:
 Assuming the data is in the working directory and still zipped, I first unzip 
 the data. I then read it into R and preserve the headers.
 
-```{r}
+
+```r
 unzip("activity.zip")
 raw <- read.csv("activity.csv", header=TRUE)
 ```
@@ -20,7 +16,8 @@ raw <- read.csv("activity.csv", header=TRUE)
 
 Using the dplyr package I group the data by date and take the sum of the number
 of steps each day. Per the instructions, I ignore missing values. 
-```{r}
+
+```r
 library(plyr)
 library(dplyr, warn.conflicts = FALSE)
 daily <- group_by(raw,date)
@@ -29,16 +26,31 @@ daily.sum <- summarise_each(daily[!missing,], funs(sum), steps)
 ```
 
 I plot the result in a histogram.
-```{r}
+
+```r
 library(ggplot2)
 qplot(steps, data=daily.sum, binwidth = 1000, main = "Frequency of total number
       of steps taken each day")
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-3-1.png) 
+
 Mean and median of the total number of steps taken per day
-```{r}
+
+```r
 mean(daily.sum$steps)
+```
+
+```
+## [1] 10766.19
+```
+
+```r
 median(daily.sum$steps)
+```
+
+```
+## [1] 10765
 ```
 
 ## What is the average daily activity pattern?
@@ -46,20 +58,31 @@ median(daily.sum$steps)
 To make a time series plot of the 5-minute interval (x-axis) and the average 
 number of steps taken averaged across all days (y-axis), I group the data by 
 interval and take the mean number of steps over each interval.
-```{r}
+
+```r
 timeofday <- group_by(raw,interval)
 timeofday.avg <- summarise_each(timeofday[!missing,], funs(mean), steps)
 with(timeofday.avg, plot(interval, steps,type = "l", main = "Average number of 
                          steps taken across all days"))
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-5-1.png) 
+
 The plot shows clearly that there is little activity during the nighttime hours,
 a burst of activity in the morning, and moderate activity during the day.
 
 I find the 5-minute interval, on average across all the days in the dataset, 
 that contains the maximum number of steps. This appears to be in the morning.
-```{r}
+
+```r
 timeofday.avg[timeofday.avg$steps == max(timeofday.avg$steps),]
+```
+
+```
+## Source: local data frame [1 x 2]
+## 
+##   interval    steps
+## 1      835 206.1698
 ```
 
 ## Imputing missing values
@@ -67,14 +90,20 @@ timeofday.avg[timeofday.avg$steps == max(timeofday.avg$steps),]
 I previously created a logical vector, 'missing', that identified the missing 
 values in the dataset. I can calculate the total number of missing values by
 summing this vector.
-```{r}
+
+```r
 sum(missing)
+```
+
+```
+## [1] 2304
 ```
 
 I fill in the missing values with the the mean of the corresponding 5-minute 
 interval and again plot a histogram of the total number of steps taken each 
 day.
-```{r}
+
+```r
 impute.mean <- function(x) replace(x, is.na(x), mean(x, na.rm = TRUE))
 impute <- ddply(raw, ~ interval, transform, steps = impute.mean(steps))
 daily2 <- group_by(impute,date)
@@ -84,12 +113,26 @@ qplot(steps, data=daily2.sum, binwidth = 1000, main = "Frequency of total number
       # of steps for that interval")
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-8-1.png) 
+
 The mean of the total number of steps taken per day is the same as before the
 addition of the imputed values, while the median is very close to being the same
 as before the addition of the imputed values.
-```{r}
+
+```r
 mean(daily2.sum$steps)
+```
+
+```
+## [1] 10766.19
+```
+
+```r
 median(daily2.sum$steps)
+```
+
+```
+## [1] 10766.19
 ```
 
 My method of imputing the missing values did not change the central tendency of
@@ -104,7 +147,8 @@ day. I use this new variable to make a panel plot containing a time series plot
 of the 5-minute interval (x-axis) and the average number of steps taken, 
 averaged across all weekday days or weekend days (y-axis).
 
-```{r}
+
+```r
 impute$weekend <- ""
 impute[,2] <- as.Date(impute[,2],"%Y-%m-%d")
 for (i in 1:nrow(impute)){
@@ -120,6 +164,8 @@ timeofday2.avg <- summarise_each(timeofday2, funs(mean), steps, weekend)
 library(lattice)
 with(timeofday2.avg, xyplot(steps ~ interval | weekend, layout = c(1,2), type = "l"))
 ```
+
+![](PA1_template_files/figure-html/unnamed-chunk-10-1.png) 
 
 The key difference during waking hours is the weekday activity level exhibits a 
 spike during the morning  while the weekend exhibits a more uniform activity 
